@@ -1,0 +1,47 @@
+/* Sidebar container */
+.sidebar {
+  @apply fixed top-0 left-0 h-full w-72 bg-white shadow-lg z-20 overflow-y-auto;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* Sidebar item */
+.sidebar-item {
+  @apply flex items-center justify-between px-4 py-3 border-b border-gray-100 cursor-pointer transition;
+}
+
+.sidebar-item:hover {
+  background-color: #f5f5f5;
+}
+
+/* Left color bar */
+.sidebar-item::before {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 100%;
+  margin-right: 10px;
+  border-radius: 0 4px 4px 0;
+}
+
+/* Warna kategori */
+.sidebar-item.welcome::before { background: #e53935; }       /* merah */
+.sidebar-item.facilities::before { background: #43a047; }   /* hijau */
+.sidebar-item.housing::before { background: #1e88e5; }      /* biru */
+.sidebar-item.sustainability::before { background: #fbc02d; }/* kuning */
+.sidebar-item.webcams::before { background: #8e24aa; }      /* ungu */
+.sidebar-item.pictures::before { background: #3949ab; }     /* biru tua */
+.sidebar-item.places::before { background: #00897b; }       /* teal */
+.sidebar-item.readmore::before { background: #d81b60; }     /* pink */
+
+/* Icon mata (eye) */
+.icon-btn {
+  @apply text-gray-500 hover:text-black transition;
+}
+
+/* Dropdown arrow */
+.arrow {
+  @apply transform transition-transform;
+}
+.arrow.open {
+  @apply rotate-180;
+}

@@ -1,0 +1,45 @@
+<div class="bottom-bar">
+    <div id="status" class="bar-section">Loading...</div>
+    
+    <div id="selected-info" class="bar-section">
+        <span id="selectedObjectName">No object selected</span>
+    </div>
+    <div class="button-group-add-from">
+        <div class="add-panel-section bar-section">
+        <button id="addPanelBtn"><i class="fas fa-plus-square"></i></button>
+    </div>
+    </div>
+
+    <div class="button-group bar-section">
+         Edit <span id="selectBtn" class="active"><i class="fas fa-expand-arrows-alt"></i></span>
+        <button id="moveBtn" disabled><i class="fas fa-arrows-alt"></i></button>
+        <button id="rotateBtn" disabled><i class="fas fa-sync-alt"></i></button>
+        <button id="resizeBtn" disabled><i class="fas fa-expand-arrows-alt"></i></button>
+    </div>
+
+    <div class="camera-control-group bar-section">
+        View <span id="selectBtn" class="active"><i class="fas fa-video-camera"></i></span>
+        <button id="topViewBtn"><i class="fas fa-arrow-up"></i></button>
+        <button id="bottomViewBtn"><i class="fas fa-arrow-down"></i></button>
+        <button id="leftViewBtn"><i class="fas fa-arrow-left"></i></button>
+        <button id="rightViewBtn"><i class="fas fa-arrow-right"></i></button>
+        <button id="perspectiveViewBtn"><i class="fas fa-cube"></i></button>
+    </div>
+</div>
+
+<div id="formPanel" class="form-panel">
+    <h3>Add New Panel</h3>
+    <label for="panelType">Panel Type:</label>
+    <select id="panelType">
+        <option value="building">Building Part</option>
+        <option value="sensor">Sensor</option>
+    </select>
+    <label for="panelName">Panel Name:</label>
+    <input type="text" id="panelName">
+    <label for="apiInput">API Integration:</label>
+    <input type="text" id="apiInput">
+    <div class="form-buttons">
+        <button id="placeBtn">Place Object</button>
+        <button id="cancelBtn">Cancel</button>
+    </div>
+</div>

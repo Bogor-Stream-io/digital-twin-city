@@ -1,0 +1,4 @@
+.venv
+*.glb
+*.gltf
+*.bin

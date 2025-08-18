@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+ <!-- Sidebar -->
+  {% include "components/sidebar.html" %}
+
+    <!-- 3D Viewer -->
+    <div class="flex-1 relative">
+      <canvas id="renderCanvas"></canvas>
+      <div id="status" class="absolute top-2 left-2 bg-gray-700 bg-opacity-70 px-3 py-1 rounded text-sm"></div>
+    </div>
+
+    <!-- Info Panel -->
+    {% include("components/info_panel.html") %}
+   
+{% endblock %}
