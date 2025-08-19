@@ -4,9 +4,12 @@
     <div id="selected-info" class="bar-section">
         <span id="selectedObjectName">No object selected</span>
     </div>
+    <div class="button-scene bar-section">
+        <button id="saveSceneBtn">💾 Save Scene &nbsp; </button>
+    </div>
     <div class="button-group-add-from">
         <div class="add-panel-section bar-section">
-        <button id="addPanelBtn"><i class="fas fa-plus-square"></i></button>
+        <button id="addPanelBtn"> <i class="fas fa-plus-square"></i> Add Sensor </button>
     </div>
     </div>
 
@@ -32,8 +35,9 @@
     <h3>Add New Panel</h3>
     <label for="panelType">Panel Type:</label>
     <select id="panelType">
-        <option value="building">Building Part</option>
-        <option value="sensor">Sensor</option>
+        <option value="gate">Building Part</option>
+        <option value="cctv">Sensor</option>
+        <option value="zone">Zone</option>
     </select>
     <label for="panelName">Panel Name:</label>
     <input type="text" id="panelName">

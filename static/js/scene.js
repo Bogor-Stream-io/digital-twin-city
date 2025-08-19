@@ -26,25 +26,40 @@ function fix_scene(scene) {
     });
 }
 
-const createScene = () => {
+function initScene() {
     scene = new BABYLON.Scene(engine);
-    camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 50, BABYLON.Vector3.Zero(), scene);
+    return scene;
+}
+
+function initCamera(scene) {
+    camera = new BABYLON.ArcRotateCamera(
+        "camera",
+        -Math.PI / 2,
+        Math.PI / 2.5,
+        50,
+        BABYLON.Vector3.Zero(),
+        scene
+    );
     camera.attachControl(canvas, true);
+    return camera;
+}
 
+function initLight(scene) {
     new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+}
 
+function initGizmo(scene) {
     gizmoManager = new BABYLON.GizmoManager(scene);
     gizmoManager.useUtilityLayer = false;
     gizmoManager.attachToMesh(null);
+}
 
-    fix_scene(scene);
-
+function loadModel(scene, camera) {
     const MODEL_URL = 'static/assets/city.glb';
     statusBar('Loading model from local assets …');
     BABYLON.SceneLoader.Append('', MODEL_URL, scene, (scene) => {
         statusBar('Building model loaded');
         
-        // Cek jika ada mesh root setelah loading selesai
         const rootMesh = scene.meshes.find(mesh => mesh.name.includes("__root__"));
         if (rootMesh) {
             const boundingInfo = rootMesh.getHierarchyBoundingVectors(true);
@@ -52,6 +67,7 @@ const createScene = () => {
             const max = boundingInfo.max;
             const center = min.add(max).scale(0.5);
             camera.setTarget(center);
+
             const sizeVec = max.subtract(min);
             const maxSize = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
             camera.radius = maxSize * 1.5;
@@ -65,24 +81,61 @@ const createScene = () => {
         console.error('Model load error for', MODEL_URL, message || exception);
         statusBar('Model load error, check file path.');
     });
+}
 
-    const sensorIcons = [
-        { id: 'gate', position: new BABYLON.Vector3(0, 0, 0), type: 'gate' },
-        { id: 'building', position: new BABYLON.Vector3(10, 0, 0), type: 'cctv' },
-        { id: 'lab', position: new BABYLON.Vector3(-10, 0, 0), type: 'webcam' }
-    ];
+async function addSensorIcons(scene) {
+    try {
+        const response = await fetch("static/data/sensor.json");
+        const sensorIcons = await response.json();
 
-    sensorIcons.forEach(sensor => {
-        const sphere = BABYLON.MeshBuilder.CreateSphere(sensor.id, { diameter: 1 }, scene);
-        sphere.position = sensor.position;
-        sphere.type = sensor.type;
-        sphere.actionManager = new BABYLON.ActionManager(scene);
-        sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
-            updateControlStatus(sphere);
-            showInfo(sphere);
-        }));
-    });
+        sensorIcons.forEach(sensor => {
+            let mesh;
 
+            if (sensor.type === "gate") {
+                mesh = BABYLON.MeshBuilder.CreateBox(sensor.id, { width: 3, height: 0.2, depth: 1 }, scene);
+                const mat = new BABYLON.StandardMaterial(`${sensor.id}_mat`, scene);
+                mat.diffuseColor = new BABYLON.Color3(1, 0, 0); // merah
+                mat.alpha = 0.5;
+                mesh.material = mat;
+
+            } else if (sensor.type === "cctv") {
+                mesh = BABYLON.MeshBuilder.CreateSphere(sensor.id, { diameter: 0.5 }, scene);
+                const mat = new BABYLON.StandardMaterial(`${sensor.id}_mat`, scene);
+                mat.diffuseColor = new BABYLON.Color3(1, 0.5, 0); // orange
+                mat.alpha = 0.5;
+                mesh.material = mat;
+
+            } else if (sensor.type === "zone") {
+                mesh = BABYLON.MeshBuilder.CreatePlane(sensor.id, { width: 5, height: 5 }, scene);
+                const mat = new BABYLON.StandardMaterial(`${sensor.id}_mat`, scene);
+                mat.diffuseColor = new BABYLON.Color3(0, 1, 0); // hijau
+                mat.alpha = 0.5;
+                mat.backFaceCulling = false;
+                mesh.material = mat;
+            }
+
+            if (mesh) {
+                mesh.position = new BABYLON.Vector3(sensor.position.x, sensor.position.y, sensor.position.z);
+                mesh.type = sensor.type;
+
+                mesh.actionManager = new BABYLON.ActionManager(scene);
+                mesh.actionManager.registerAction(
+                    new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
+                        updateControlStatus(mesh);
+                        showInfo(mesh);
+                    })
+                );
+            }
+        });
+    } catch (err) {
+        console.error("Gagal load sensor.json:", err);
+    }
+}
+
+// Array untuk menampung objek baru sebelum disimpan
+let pendingSensors = [];
+
+function registerPointerEvents(scene, camera) {
     scene.onPointerDown = (evt) => {
         if (currentPanelPlacement) {
             const pickResult = scene.pick(scene.pointerX, scene.pointerY);
@@ -90,29 +143,73 @@ const createScene = () => {
                 const panelType = document.getElementById('panelType').value;
                 const panelName = document.getElementById('panelName').value || `${panelType}__${Date.now()}`;
                 const apiInput = document.getElementById('apiInput').value || 'N/A';
-                
-                let newObject;
-                if (panelType === 'building') {
-                    newObject = BABYLON.MeshBuilder.CreateBox(panelName, { size: 2 }, scene);
-                } else if (panelType === 'sensor') {
-                    newObject = BABYLON.MeshBuilder.CreateSphere(panelName, { diameter: 1 }, scene);
+
+                let newObject, mat;
+
+                // Pilih bentuk object sesuai tipe
+                if (panelType === 'gate') {
+                    newObject = BABYLON.MeshBuilder.CreateBox(panelName, { width: 3, height: 0.2, depth: 1 }, scene);
+                    mat = new BABYLON.StandardMaterial("mat_gate", scene);
+                    mat.diffuseColor = new BABYLON.Color3(1, 0, 0); // merah
+                    mat.alpha = 0.5;
+                } else if (panelType === 'cctv') {
+                    newObject = BABYLON.MeshBuilder.CreateSphere(panelName, { diameter: 0.5 }, scene);
+                    mat = new BABYLON.StandardMaterial("mat_cctv", scene);
+                    mat.diffuseColor = new BABYLON.Color3(1, 0.5, 0); // orange
+                    mat.alpha = 0.5;
+                } else if (panelType === 'zone') {
+                    newObject = BABYLON.MeshBuilder.CreatePlane(panelName, { width: 4, height: 4 }, scene);
+                    mat = new BABYLON.StandardMaterial("mat_zone", scene);
+                    mat.diffuseColor = new BABYLON.Color3(0, 1, 0); // hijau
+                    mat.alpha = 0.5;
+                    // rotasi supaya horizontal
+                    newObject.rotation.x = Math.PI / 2;
                 }
-                
+
                 if (newObject) {
+                    newObject.material = mat;
+
+                    // posisi di permukaan tanah
                     newObject.position.x = pickResult.pickedPoint.x;
                     newObject.position.z = pickResult.pickedPoint.z;
-                    
                     const boundingBox = newObject.getBoundingInfo().boundingBox;
                     newObject.position.y = -boundingBox.minimumWorld.y;
 
                     newObject.type = panelType;
                     newObject.api = apiInput;
-                    
+
+                    // event klik
                     newObject.actionManager = new BABYLON.ActionManager(scene);
-                    newObject.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
-                        updateControlStatus(newObject);
-                        showInfo(newObject);
-                    }));
+                    newObject.actionManager.registerAction(
+                        new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
+                            updateControlStatus(newObject);
+                            showInfo(newObject);
+                        })
+                    );
+
+                    // simpan data ke buffer
+                    pendingSensors.push({
+                        id: panelName,
+                        type: panelType,
+                        api: apiInput,
+                        position: {
+                            x: newObject.position.x,
+                            y: newObject.position.y,
+                            z: newObject.position.z
+                        },
+                        rotation: {
+                            x: newObject.rotation.x,
+                            y: newObject.rotation.y,
+                            z: newObject.rotation.z
+                        },
+                        scaling: {
+                            x: newObject.scaling.x,
+                            y: newObject.scaling.y,
+                            z: newObject.scaling.z
+                        }
+                    });
+
+                    console.log("Ditambahkan ke pendingSensors:", pendingSensors);
                 }
             }
             currentPanelPlacement = false;
@@ -129,8 +226,62 @@ const createScene = () => {
             }
         }
     };
+}
+
+/* save scene state */
+document.getElementById("saveSceneBtn").addEventListener("click", () => {
+    const sensorsData = [];
+
+    scene.meshes.forEach(mesh => {
+        if (mesh.type === "gate" || mesh.type === "cctv" || mesh.type === "zone") {
+            sensorsData.push({
+                id: mesh.id,
+                type: mesh.type,
+                position: {
+                    x: mesh.position.x,
+                    y: mesh.position.y,
+                    z: mesh.position.z
+                },
+                scaling: {
+                    x: mesh.scaling.x,
+                    y: mesh.scaling.y,
+                    z: mesh.scaling.z
+                }
+            });
+        }
+    });
+    console.log("Saving sensors:", pendingSensors); // debug log
+
+    fetch("/save_sensors", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(sensorsData)  // <-- bungkus array
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Data tersimpan:", data);
+        alert("Sensor berhasil disimpan!");
+        pendingSensors = [];
+    })
+    .catch(err => console.error("Gagal simpan:", err));
+});
+
+
+/**
+ * Fungsi utama createScene (tetap dipanggil di main.js)
+ */
+function createScene() {
+    scene = initScene();
+    camera = initCamera(scene);
+    initLight(scene);
+    initGizmo(scene);
+    fix_scene(scene);      // fungsi lama tetap dipanggil
+
+    loadModel(scene, camera);
+    addSensorIcons(scene);
+    registerPointerEvents(scene, camera);
 
     return scene;
-};
+}
 
 //end create scene function
