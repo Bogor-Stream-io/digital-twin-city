@@ -91,7 +91,7 @@ async function addSensorIcons(scene) {
         sensorIcons.forEach(sensor => {
             let mesh;
 
-            if (sensor.type === "gate") {
+            if (sensor.type === "wall") {
                 mesh = BABYLON.MeshBuilder.CreateBox(sensor.id, { width: 3, height: 3, depth: 2 }, scene);
                 const mat = new BABYLON.StandardMaterial(`${sensor.id}_mat`, scene);
                 mat.diffuseColor = new BABYLON.Color3(1, 0, 0); // merah
@@ -180,9 +180,9 @@ function registerPointerEvents(scene, camera) {
                 let newObject, mat;
 
                 // Pilih bentuk object sesuai tipe
-                if (panelType === 'gate') {
+                if (panelType === 'wall') {
                     newObject = BABYLON.MeshBuilder.CreateBox(panelName, { width: 3, height: 0.2, depth: 1 }, scene);
-                    mat = new BABYLON.StandardMaterial("mat_gate", scene);
+                    mat = new BABYLON.StandardMaterial("mat_wall", scene);
                     mat.diffuseColor = new BABYLON.Color3(1, 0, 0); // merah
                     mat.alpha = 0.5;
                 } else if (panelType === 'cctv') {
@@ -266,7 +266,7 @@ document.getElementById("saveSceneBtn").addEventListener("click", () => {
     const sensorsData = [];
 
     scene.meshes.forEach(mesh => {
-        if (mesh.type === "gate" || mesh.type === "cctv" || mesh.type === "zone") {
+        if (mesh.type === "wall" || mesh.type === "cctv" || mesh.type === "zone") {
             sensorsData.push({
                 id: mesh.id,
                 type: mesh.type,

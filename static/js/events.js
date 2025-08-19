@@ -90,3 +90,76 @@ function updateControlStatus(mesh) {
 document.getElementById("deleteSensorBtn").addEventListener("click", () => {
     deleteSensor(selectedMesh);
 });
+
+//event listener untuk tombol Edit Sensor
+// Tombol Edit Sensor
+document.getElementById("editSensorBtn").addEventListener("click", () => {
+    const formPanel = document.getElementById("formPanel");
+    formPanel.style.display = (formPanel.style.display === "block") ? "none" : "block";
+
+    // Jika ada mesh yang dipilih, isi form dengan datanya
+    if (selectedMesh) {
+        document.getElementById("panelType").value = selectedMesh.type || "wall";
+        document.getElementById("panelName").value = selectedMesh.id || "";
+        document.getElementById("apiInput").value = selectedMesh.api || "";
+    }
+});
+
+// Cancel
+document.getElementById("cancelBtn").addEventListener("click", () => {
+    document.getElementById("formPanel").style.display = "none";
+    document.getElementById("placeBtn").textContent = "Place Object";
+    editMode = false;
+    selectedMesh = null;
+});
+
+// Place / Update Object
+let editMode = false; // Flag untuk mode edit
+document.getElementById("placeBtn").addEventListener("click", async () => {
+    const type = document.getElementById("panelType").value;
+    const name = document.getElementById("panelName").value;
+    const api = document.getElementById("apiInput").value;
+
+    if (editMode && selectedMesh) {
+        // Mode Edit
+        selectedMesh.type = type;
+        selectedMesh.id = name;
+        selectedMesh.api = api;
+
+        const sensorData = {
+            id: name,
+            type: type,
+            position: selectedMesh.position || {x:0,y:0,z:0},
+            scaling: selectedMesh.scaling || {x:1,y:1,z:1},
+            api: api
+        };
+
+        try {
+            const res = await fetch("/update-sensor", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(sensorData)
+            });
+            const data = await res.json();
+            alert(data.message);
+        } catch (err) {
+            console.error("Update error:", err);
+            alert("Gagal update sensor");
+        }
+
+        // Reset form
+        document.getElementById("placeBtn").textContent = "Place Object";
+        editMode = false;
+        selectedMesh = null;
+        document.getElementById("formPanel").style.display = "none";
+    } else {
+        // Mode Tambah Baru
+        console.log("Tambah objek baru:", { type, name, api });
+        // 👉 di sini lanjutkan logic Place Object sesuai kode awalmu
+    }
+});
+// Kamu bisa sambungkan ini dengan event click BabylonJS
+function selectMesh(mesh) {
+    selectedMesh = mesh;
+    console.log("Selected:", mesh);
+}

@@ -2,7 +2,7 @@ from flask import Flask,request,jsonify, render_template, send_from_directory
 import json, os
 from flask_cors import CORS
 app = Flask(__name__)
-
+SENSOR_FILE = "static/data/sensor.json"
 @app.route("/")
 def index():
     return render_template("home.html")
@@ -17,7 +17,7 @@ def delete_sensor():
     data = request.get_json()
     sensor_id = data.get("id")
 
-    file_path = "static/data/sensor.json"
+    file_path = SENSOR_FILE
     if not os.path.exists(file_path):
         return jsonify({"error": "File not found"}), 404
 
@@ -41,7 +41,7 @@ def save_sensors():
         if not isinstance(new_sensors, list):
             return jsonify({"error": "Expected a list of sensors"}), 400
 
-        file_path = "static/data/sensor.json"
+        file_path = SENSOR_FILE
 
         # Baca data lama kalau ada
         existing_sensors = []
@@ -77,7 +77,41 @@ def save_sensors():
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
+
+# route edit data sensor
+@app.route("/update-sensor", methods=["POST"])
+def update_sensor():
+    new_sensor = request.json
+    if not new_sensor.get("id"):
+        return jsonify({"error": "ID required"}), 400
+
+    # Load data lama
+    if os.path.exists(SENSOR_FILE):
+        with open(SENSOR_FILE, "r") as f:
+            try:
+                sensors = json.load(f)
+            except:
+                sensors = []
+    else:
+        sensors = []
+
+    # Cari dan update sensor dengan ID yg sama
+    updated = False
+    for i, sensor in enumerate(sensors):
+        if sensor["id"] == new_sensor["id"]:
+            sensors[i] = new_sensor
+            updated = True
+            break
+
+    if not updated:
+        sensors.append(new_sensor)
+
+    # Simpan ke file
+    with open(SENSOR_FILE, "w") as f:
+        json.dump(sensors, f, indent=4)
+
+    return jsonify({"message": f"Sensor {new_sensor['id']} berhasil disimpan"})
+
 if __name__ == "__main__":
     app.run(debug=True)
 CORS(app) # Ini akan mengaktifkan CORS untuk semua rute
