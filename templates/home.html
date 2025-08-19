@@ -3,10 +3,17 @@
 {% block content %}
  <!-- Sidebar -->
   {% include "components/sidebar.html" %}
+  <!-- map openlayer-->
+
 
     <!-- 3D Viewer -->
     <div class="flex-1 relative">
       <canvas id="renderCanvas"></canvas>
+      <!-- canvas OpenLayers (hidden) -->
+      <div id="mapContainer" style="width:512px; height:512px; display:none;">
+        <div id="map" style="width:100%; height:100%;"></div>
+      </div>
+
       <div id="status" class="absolute top-2 left-2 bg-gray-700 bg-opacity-70 px-3 py-1 rounded text-sm"></div>
     </div>
 

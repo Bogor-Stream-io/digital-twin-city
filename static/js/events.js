@@ -39,6 +39,7 @@ document.getElementById('resizeBtn').addEventListener('click', () => {
 
 // Tombol kontrol kamera
 document.getElementById('topViewBtn').addEventListener('click', () => {
+    
     camera.setTarget(BABYLON.Vector3.Zero());
     BABYLON.Animation.CreateAndStartAnimation('cameraMove', camera, 'alpha', 30, 60, camera.alpha, Math.PI / 2, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT, new BABYLON.SineEase());
     BABYLON.Animation.CreateAndStartAnimation('cameraMove', camera, 'beta', 30, 60, camera.beta, 0.01, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT, new BABYLON.SineEase());
@@ -81,11 +82,6 @@ document.getElementById('panViewBtn').addEventListener('click', () => {
 });
 // hapus event sensor 
 let selectedMesh = null;
-
-function updateControlStatus(mesh) {
-    selectedMesh = mesh;  // simpan mesh yang sedang dipilih
-    console.log("Selected:", selectedMesh ? selectedMesh.id : "None");
-}
 
 document.getElementById("deleteSensorBtn").addEventListener("click", () => {
     deleteSensor(selectedMesh);

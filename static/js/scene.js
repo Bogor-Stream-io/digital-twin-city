@@ -1,7 +1,56 @@
+/**
+ * Membuat skybox menggunakan aset yang paling sering digunakan.
+ * @param {BABYLON.Scene} scene - Objek scene saat ini.
+ * @param {string} skyboxType - Jenis skybox yang akan dibuat. Pilihan: 'default_pbr', 'clear_sky', atau 'dusk'.
+ */
+function createSkybox(scene, skyboxType) {
+    let skybox = null;
+
+    if (skyboxType !== 'default_pbr') {
+        skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, scene);
+        skybox.isPickable = false;
+    }
+
+    switch (skyboxType) {
+        case 'default_pbr': {
+            // Opsi yang direkomendasikan untuk rendering PBR
+            const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("https://assets.babylonjs.com/environments/environmentSpecular.env", scene);
+            scene.createDefaultSkybox(hdrTexture, true, 1000, 0.2, true);
+            break;
+        }
+        case 'clear_sky': {
+            // Langit biru cerah, baik untuk adegan non-PBR
+            const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxClearSky", scene);
+            skyboxMaterial.backFaceCulling = false;
+            skyboxMaterial.disableLighting = true;
+            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://assets.babylonjs.com/textures/skybox/clear-sky/sky", scene);
+            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+            skybox.material = skyboxMaterial;
+            break;
+        }
+        case 'dusk': {
+            // Langit sore, cocok untuk adegan senja
+            const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxDusk", scene);
+            skyboxMaterial.backFaceCulling = false;
+            skyboxMaterial.disableLighting = true;
+            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://assets.babylonjs.com/textures/skybox/dusk/dusk", scene);
+            skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+            skybox.material = skyboxMaterial;
+            break;
+        }
+        default:
+            console.warn("Tipe skybox tidak valid. Silakan pilih 'default_pbr', 'clear_sky', atau 'dusk'.");
+            if (skybox) {
+                skybox.dispose();
+            }
+            break;
+    }
+}
+//fix scene function
 function fix_scene(scene) {
     const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 100, height: 100, subdivisions: 2 }, scene);
     ground.material = new BABYLON.StandardMaterial('groundMat', scene);
-    ground.material.diffuseTexture = new BABYLON.Texture('/static/assets/pattern/tanahmerah.jpg', scene);
+    ground.material.diffuseTexture = new BABYLON.Texture('/static/assets/pattern/rumput.jpg', scene);
     ground.material.diffuseTexture.uScale = 10;
     ground.material.diffuseTexture.vScale = 10;
     ground.receiveShadows = true;
@@ -309,7 +358,7 @@ function createScene() {
     initLight(scene);
     initGizmo(scene);
     fix_scene(scene);      // fungsi lama tetap dipanggil
-
+    createSkybox(scene, 'default_pbr'); // ganti dengan skybox dinamis
     loadModel(scene, camera);
     addSensorIcons(scene);
     registerPointerEvents(scene, camera);
