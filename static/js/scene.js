@@ -92,7 +92,7 @@ async function addSensorIcons(scene) {
             let mesh;
 
             if (sensor.type === "gate") {
-                mesh = BABYLON.MeshBuilder.CreateBox(sensor.id, { width: 3, height: 0.2, depth: 1 }, scene);
+                mesh = BABYLON.MeshBuilder.CreateBox(sensor.id, { width: 3, height: 3, depth: 2 }, scene);
                 const mat = new BABYLON.StandardMaterial(`${sensor.id}_mat`, scene);
                 mat.diffuseColor = new BABYLON.Color3(1, 0, 0); // merah
                 mat.alpha = 0.5;
@@ -111,30 +111,63 @@ async function addSensorIcons(scene) {
                 mat.diffuseColor = new BABYLON.Color3(0, 1, 0); // hijau
                 mat.alpha = 0.5;
                 mat.backFaceCulling = false;
+                mat.sideOrientation= BABYLON.Mesh.DOUBLESIDE ;
                 mesh.material = mat;
             }
 
             if (mesh) {
                 mesh.position = new BABYLON.Vector3(sensor.position.x, sensor.position.y, sensor.position.z);
-                mesh.type = sensor.type;
 
-                mesh.actionManager = new BABYLON.ActionManager(scene);
-                mesh.actionManager.registerAction(
-                    new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
-                        updateControlStatus(mesh);
-                        showInfo(mesh);
-                    })
-                );
+                if (sensor.rotation) {
+                    mesh.rotation = new BABYLON.Vector3(sensor.rotation.x, sensor.rotation.y, sensor.rotation.z);
+                } else if (sensor.type === "zone") {
+                    // fallback kalau file lama tidak ada rotation
+                    mesh.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
+                    mesh.rotation.x = Math.PI / -2;
+                }
+
+                if (sensor.scaling) {
+                    mesh.scaling = new BABYLON.Vector3(sensor.scaling.x, sensor.scaling.y, sensor.scaling.z);
+                }
+
+                mesh.type = sensor.type;
             }
         });
     } catch (err) {
         console.error("Gagal load sensor.json:", err);
     }
 }
+/* Fungsi hapus sensor  */
+// Fungsi hapus sensor
+function deleteSensor(mesh) {
+    if (!mesh) {
+        alert("Tidak ada sensor yang dipilih!");
+        return;
+    }
+
+    // Konfirmasi
+    if (!confirm(`Hapus sensor ${mesh.id}?`)) return;
+
+    // Hapus dari scene
+    mesh.dispose();
+
+    // Hapus dari server (sensor.json)
+    fetch("/delete_sensor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: mesh.id })
+    })
+    .then(res => res.json())
+    .then(data => {
+        console.log("Sensor dihapus:", data);
+        alert("Sensor berhasil dihapus!");
+    })
+    .catch(err => console.error("Gagal hapus sensor:", err));
+}
 
 // Array untuk menampung objek baru sebelum disimpan
 let pendingSensors = [];
-
+//function untuk mengupdate status kontrol
 function registerPointerEvents(scene, camera) {
     scene.onPointerDown = (evt) => {
         if (currentPanelPlacement) {

@@ -79,3 +79,14 @@ document.getElementById('panViewBtn').addEventListener('click', () => {
         statusBar('Panning mode: Off');
     }
 });
+// hapus event sensor 
+let selectedMesh = null;
+
+function updateControlStatus(mesh) {
+    selectedMesh = mesh;  // simpan mesh yang sedang dipilih
+    console.log("Selected:", selectedMesh ? selectedMesh.id : "None");
+}
+
+document.getElementById("deleteSensorBtn").addEventListener("click", () => {
+    deleteSensor(selectedMesh);
+});

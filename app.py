@@ -11,6 +11,26 @@ def index():
 @app.route("/assets/<path:filename>")
 def assets(filename):
     return send_from_directory("static/assets", filename)
+# hapus sensor routing 
+@app.route("/delete_sensor", methods=["POST"])
+def delete_sensor():
+    data = request.get_json()
+    sensor_id = data.get("id")
+
+    file_path = "static/data/sensor.json"
+    if not os.path.exists(file_path):
+        return jsonify({"error": "File not found"}), 404
+
+    with open(file_path, "r") as f:
+        sensors = json.load(f)
+
+    # Filter keluar sensor yang dihapus
+    sensors = [s for s in sensors if s["id"] != sensor_id]
+
+    with open(file_path, "w") as f:
+        json.dump(sensors, f, indent=2)
+
+    return jsonify({"status": "deleted", "id": sensor_id})
 
 #add route untuk mengirimkan file sensor.json
 @app.route("/save_sensors", methods=["POST"])
