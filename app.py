@@ -1,5 +1,5 @@
 from flask import Flask, render_template, send_from_directory
-
+from flask_cors import CORS
 app = Flask(__name__)
 
 @app.route("/")
@@ -13,3 +13,4 @@ def assets(filename):
 
 if __name__ == "__main__":
     app.run(debug=True)
+CORS(app) # Ini akan mengaktifkan CORS untuk semua rute
