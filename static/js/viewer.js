@@ -3,12 +3,12 @@ const engine = new BABYLON.Engine(canvas, true);
 let scene, camera;
 let gizmoManager;
 let currentPanelPlacement = false;
+
 function statusBar(msg) {
     document.getElementById('status').innerText = msg;
 }
 
 // Fungsi untuk memperbarui status UI tombol dan teks
-// Fungsi untuk memperbarui status kontrol UI dan info objek
 function updateControlStatus(mesh) {
     const moveBtn = document.getElementById('moveBtn');
     const rotateBtn = document.getElementById('rotateBtn');
@@ -36,7 +36,6 @@ function updateControlStatus(mesh) {
     }
 }
 
-// Fungsi untuk menampilkan info panel
 function showInfo(object) {
     const infoPanel = document.getElementById('infoPanel');
     if (!infoPanel) return;
@@ -53,7 +52,44 @@ function showInfo(object) {
     infoPanel.classList.add('active');
 }
 
-// Fungsi utama untuk membuat scene
+/**
+ * Fungsi untuk memperbaiki scene:
+ * 1. Membuat ground plane dengan tekstur.
+ * 2. Memastikan model yang di-load menempel pada ground.
+ * 3. Menambahkan action manager ke mesh agar dapat dipilih.
+ */
+function fix_scene(scene) {
+    // 1. Membuat ground plane dengan tekstur
+    const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 100, height: 100, subdivisions: 2 }, scene);
+    ground.material = new BABYLON.StandardMaterial('groundMat', scene);
+    ground.material.diffuseTexture = new BABYLON.Texture('/static/assets/pattern/tanahmerah.jpg', scene);
+    ground.material.diffuseTexture.uScale = 10;
+    ground.material.diffuseTexture.vScale = 10;
+    ground.receiveShadows = true;
+
+    // 2. Menyesuaikan posisi model setelah di-load
+    // Gunakan onNewMeshAddedObservable untuk melacak mesh baru
+    scene.onNewMeshAddedObservable.add((newMesh) => {
+        if (newMesh.name.includes("Gizmo") || newMesh.name === "ground") {
+            return;
+        }
+
+        // Dapatkan mesh utama dari scene (biasanya root mesh)
+        const rootMesh = newMesh.parent || newMesh;
+        if (rootMesh.name.includes("__root__")) {
+            const boundingBox = rootMesh.getBoundingInfo().boundingBox;
+            rootMesh.position.y -= boundingBox.minimumWorld.y;
+
+            rootMesh.actionManager = new BABYLON.ActionManager(scene);
+            rootMesh.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
+                updateControlStatus(rootMesh);
+                rootMesh.type = rootMesh.type || 'loaded_object';
+                showInfo(rootMesh);
+            }));
+        }
+    });
+}
+
 const createScene = () => {
     scene = new BABYLON.Scene(engine);
     camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 50, BABYLON.Vector3.Zero(), scene);
@@ -65,13 +101,17 @@ const createScene = () => {
     gizmoManager.useUtilityLayer = false;
     gizmoManager.attachToMesh(null);
 
-    const MODEL_URL = 'static/assets/military_base.glb';
+    fix_scene(scene);
+
+    const MODEL_URL = 'static/assets/city.glb';
     statusBar('Loading model from local assets …');
     BABYLON.SceneLoader.Append('', MODEL_URL, scene, (scene) => {
         statusBar('Building model loaded');
-        const meshes = scene.meshes;
-        if (meshes.length > 0) {
-            const boundingInfo = meshes[0].getHierarchyBoundingVectors(true);
+        
+        // Cek jika ada mesh root setelah loading selesai
+        const rootMesh = scene.meshes.find(mesh => mesh.name.includes("__root__"));
+        if (rootMesh) {
+            const boundingInfo = rootMesh.getHierarchyBoundingVectors(true);
             const min = boundingInfo.min;
             const max = boundingInfo.max;
             const center = min.add(max).scale(0.5);
@@ -107,7 +147,6 @@ const createScene = () => {
         }));
     });
 
-    // Event listener untuk klik pada scene
     scene.onPointerDown = (evt) => {
         if (currentPanelPlacement) {
             const pickResult = scene.pick(scene.pointerX, scene.pointerY);
@@ -119,13 +158,17 @@ const createScene = () => {
                 let newObject;
                 if (panelType === 'building') {
                     newObject = BABYLON.MeshBuilder.CreateBox(panelName, { size: 2 }, scene);
-                    newObject.position = pickResult.pickedPoint;
                 } else if (panelType === 'sensor') {
                     newObject = BABYLON.MeshBuilder.CreateSphere(panelName, { diameter: 1 }, scene);
-                    newObject.position = pickResult.pickedPoint;
                 }
                 
                 if (newObject) {
+                    newObject.position.x = pickResult.pickedPoint.x;
+                    newObject.position.z = pickResult.pickedPoint.z;
+                    
+                    const boundingBox = newObject.getBoundingInfo().boundingBox;
+                    newObject.position.y = -boundingBox.minimumWorld.y;
+
                     newObject.type = panelType;
                     newObject.api = apiInput;
                     
@@ -253,7 +296,18 @@ document.getElementById('perspectiveViewBtn').addEventListener('click', () => {
     BABYLON.Animation.CreateAndStartAnimation('cameraMove', camera, 'alpha', 30, 60, camera.alpha, -Math.PI / 2, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT, new BABYLON.SineEase());
     BABYLON.Animation.CreateAndStartAnimation('cameraMove', camera, 'beta', 30, 60, camera.beta, Math.PI / 2.5, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT, new BABYLON.SineEase());
 });
-
+ // Event listener baru untuk Panning
+document.getElementById('panViewBtn').addEventListener('click', () => {
+        isPanningModeActive = !isPanningModeActive; // Ganti status
+        
+        if (isPanningModeActive) {
+            window.camera.panningSensibility = 2000;
+            statusBar('Panning mode: On');
+        } else {
+            window.camera.panningSensibility = 0;
+            statusBar('Panning mode: Off');
+        }
+ });
 
 engine.runRenderLoop(() => scene.render());
 window.addEventListener('resize', () => engine.resize());
