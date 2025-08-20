@@ -6,53 +6,93 @@
 function createSkybox(scene, skyboxType) {
     let skybox = null;
 
-    if (skyboxType !== 'default_pbr') {
-        skybox = BABYLON.MeshBuilder.CreateBox("skyBox", { size: 1000.0 }, scene);
-        skybox.isPickable = false;
-    }
-
     switch (skyboxType) {
         case 'default_pbr': {
-            // Opsi yang direkomendasikan untuk rendering PBR
-            const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData("https://assets.babylonjs.com/environments/environmentSpecular.env", scene);
+            // Opsi lingkungan PBR (HDR)
+            const hdrTexture = BABYLON.CubeTexture.CreateFromPrefilteredData(
+                "https://playground.babylonjs.com/textures/environment.dds",
+                scene
+            );
             scene.createDefaultSkybox(hdrTexture, true, 1000, 0.2, true);
             break;
         }
         case 'clear_sky': {
-            // Langit biru cerah, baik untuk adegan non-PBR
+            // Langit cerah (CubeTexture)
+            skybox = BABYLON.MeshBuilder.CreateBox("skyBoxClearSky", { size: 1000.0 }, scene);
+            skybox.isPickable = false;
+
             const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxClearSky", scene);
             skyboxMaterial.backFaceCulling = false;
             skyboxMaterial.disableLighting = true;
-            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://assets.babylonjs.com/textures/skybox/clear-sky/sky", scene);
+            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
+                "https://playground.babylonjs.com/textures/skybox",
+                scene
+            );
             skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+
             skybox.material = skyboxMaterial;
             break;
         }
         case 'dusk': {
-            // Langit sore, cocok untuk adegan senja
+            // Langit senja (CubeTexture)
+            skybox = BABYLON.MeshBuilder.CreateBox("skyBoxDusk", { size: 1000.0 }, scene);
+            skybox.isPickable = false;
+
             const skyboxMaterial = new BABYLON.StandardMaterial("skyBoxDusk", scene);
             skyboxMaterial.backFaceCulling = false;
             skyboxMaterial.disableLighting = true;
-            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture("https://assets.babylonjs.com/textures/skybox/dusk/dusk", scene);
+            skyboxMaterial.reflectionTexture = new BABYLON.CubeTexture(
+                "https://playground.babylonjs.com/textures/skybox/dusk",
+                scene
+            );
             skyboxMaterial.reflectionTexture.coordinatesMode = BABYLON.Texture.SKYBOX_MODE;
+
             skybox.material = skyboxMaterial;
             break;
         }
-        default:
-            console.warn("Tipe skybox tidak valid. Silakan pilih 'default_pbr', 'clear_sky', atau 'dusk'.");
-            if (skybox) {
-                skybox.dispose();
-            }
+        case 'panorama': {
+            // Langit panorama berbentuk sphere
+            skybox = BABYLON.MeshBuilder.CreateSphere("skySphere", { segments: 32, diameter: 1000 }, scene);
+            skybox.isPickable = false;
+
+            const skyMaterial = new BABYLON.StandardMaterial("skyMaterial", scene);
+            skyMaterial.backFaceCulling = false;
+            skyMaterial.disableLighting = true;
+            skyMaterial.diffuseTexture = new BABYLON.Texture("static/assets/skybox/panorama.jpg", scene);
+
+            skybox.material = skyMaterial;
             break;
+        }
+        default: {
+            console.warn("Tipe skybox tidak valid. Pilih: 'default_pbr', 'clear_sky', 'dusk', atau 'panorama'.");
+            break;
+        }
     }
+
+    return skybox;
 }
+
 //fix scene function
 function fix_scene(scene) {
+    // const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 100, height: 100, subdivisions: 2 }, scene);
+    // ground.material = new BABYLON.StandardMaterial('groundMat', scene);
+    // ground.material.diffuseTexture = new BABYLON.Texture('/static/assets/pattern/map.jpg', scene);
+    // ground.material.diffuseTexture.uScale = 10;
+    // ground.material.diffuseTexture.vScale = 10;
+    // ground.receiveShadows = true;
     const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 100, height: 100, subdivisions: 2 }, scene);
-    ground.material = new BABYLON.StandardMaterial('groundMat', scene);
-    ground.material.diffuseTexture = new BABYLON.Texture('/static/assets/pattern/tanah1.jpg', scene);
-    ground.material.diffuseTexture.uScale = 10;
-    ground.material.diffuseTexture.vScale = 10;
+
+    const groundMat = new BABYLON.StandardMaterial('groundMat', scene);
+    const groundTex = new BABYLON.Texture('/static/assets/pattern/map.jpg', scene);
+
+    // Stretch fit → tidak tile
+    groundTex.uScale = 1;
+    groundTex.vScale = 1;
+    groundTex.wrapU = BABYLON.Texture.CLAMP_ADDRESSMODE;
+    groundTex.wrapV = BABYLON.Texture.CLAMP_ADDRESSMODE;
+
+    groundMat.diffuseTexture = groundTex;
+    ground.material = groundMat;
     ground.receiveShadows = true;
 
     scene.onNewMeshAddedObservable.add((newMesh) => {
@@ -77,6 +117,7 @@ function fix_scene(scene) {
 
 function initScene() {
     scene = new BABYLON.Scene(engine);
+    
     return scene;
 }
 
@@ -141,29 +182,34 @@ async function addSensorIcons(scene) {
             let mesh;
 
             if (sensor.type === "wall") {
-                mesh = BABYLON.MeshBuilder.CreateBox(sensor.id, { width: sensor.dimensions.width, height: sensor.dimensions.height, depth: sensor.dimensions.depth }, scene);
+                mesh = BABYLON.MeshBuilder.CreateBox(sensor.id, {
+                    width: sensor.dimensions.width,
+                    height: sensor.dimensions.height,
+                    depth: sensor.dimensions.depth
+                }, scene);
+
                 const mat = new BABYLON.StandardMaterial(`${sensor.id}_mat`, scene);
-                mat.diffuseColor = new BABYLON.Color3(1, 0, 0); // merah
+                mat.diffuseColor = new BABYLON.Color3(1, 0, 0); 
                 mat.alpha = 0.5;
                 mesh.material = mat;
 
             } else if (sensor.type === "cctv") {
                 mesh = BABYLON.MeshBuilder.CreatePlane(sensor.id, { width: 2, height: 2 }, scene);
+
                 const mat = new BABYLON.StandardMaterial(`${sensor.id}_mat`, scene);
-               // buat material dengan texture gambar
                 mat.diffuseTexture = new BABYLON.Texture("static/assets/pattern/webcam.png", scene);
-                mat.diffuseTexture.hasAlpha = true; // aktifkan transparansi dari gambar
-                mat.backFaceCulling = false;        // biar gambar terlihat dari dua sisi
-                mat.boundingBox = true; // aktifkan bounding box
+                mat.diffuseTexture.hasAlpha = true;
+                mat.backFaceCulling = false;
                 mesh.material = mat;
 
             } else if (sensor.type === "zone") {
                 mesh = BABYLON.MeshBuilder.CreatePlane(sensor.id, { width: 5, height: 5 }, scene);
+
                 const mat = new BABYLON.StandardMaterial(`${sensor.id}_mat`, scene);
-                mat.diffuseColor = new BABYLON.Color3(0, 1, 0); // hijau
+                mat.diffuseColor = new BABYLON.Color3(0, 1, 0); 
                 mat.alpha = 0.5;
                 mat.backFaceCulling = false;
-                mat.sideOrientation= BABYLON.Mesh.DOUBLESIDE ;
+                mat.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
                 mesh.material = mat;
             }
 
@@ -173,7 +219,6 @@ async function addSensorIcons(scene) {
                 if (sensor.rotation) {
                     mesh.rotation = new BABYLON.Vector3(sensor.rotation.x, sensor.rotation.y, sensor.rotation.z);
                 } else if (sensor.type === "zone") {
-                    // fallback kalau file lama tidak ada rotation
                     mesh.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
                     mesh.rotation.x = Math.PI / -2;
                 }
@@ -183,14 +228,56 @@ async function addSensorIcons(scene) {
                 }
 
                 mesh.type = sensor.type;
+
+                // Tambahkan action manager untuk hover effect
+                mesh.actionManager = new BABYLON.ActionManager(scene);
+
+                // Saat hover → glow + border + cursor pointer
+                mesh.actionManager.registerAction(
+                new BABYLON.ExecuteCodeAction(
+                    BABYLON.ActionManager.OnPointerOverTrigger,
+                    () => {
+                        glowLayer.addIncludedOnlyMesh(mesh);
+
+                        let borderColor;
+
+                        if (mesh.material && mesh.material.diffuseColor) {
+                            // ambil warna diffuse dari material
+                            borderColor = mesh.material.diffuseColor.clone();
+                        } else {
+                            // fallback kalau material pakai texture
+                            borderColor = new BABYLON.Color3(0.2, 0.8, 0.2); // hijau default
+                        }
+
+                        // pasang highlight dengan warna sensor
+                        hl.addMesh(mesh, borderColor);
+
+                        scene.getEngine().getRenderingCanvas().style.cursor = "pointer";
+                    }
+                )
+            );
+
+
+                // Saat keluar hover → hilangkan efek
+                mesh.actionManager.registerAction(
+                    new BABYLON.ExecuteCodeAction(
+                        BABYLON.ActionManager.OnPointerOutTrigger,
+                        () => {
+                            glowLayer.removeIncludedOnlyMesh(mesh);
+                            hl.removeMesh(mesh);
+                            scene.getEngine().getRenderingCanvas().style.cursor = "default";
+                        }
+                    )
+                );
+
             }
         });
     } catch (err) {
         console.error("Gagal load sensor.json:", err);
     }
 }
+
 /* Fungsi hapus sensor  */
-// Fungsi hapus sensor
 function deleteSensor(mesh) {
     if (!mesh) {
         alert("Tidak ada sensor yang dipilih!");
@@ -383,7 +470,7 @@ function createScene() {
     initLight(scene);
     initGizmo(scene);
     fix_scene(scene);      // fungsi lama tetap dipanggil
-    createSkybox(scene, 'default_pbr'); // ganti dengan skybox dinamis
+    createSkybox(scene, 'clear_sky'); // ganti dengan skybox dinamis
     loadModel(scene, camera);
     addSensorIcons(scene);
     registerPointerEvents(scene, camera);

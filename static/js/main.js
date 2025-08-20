@@ -7,6 +7,12 @@ let isPanningModeActive = false;
 
 // Inisialisasi scene
 scene = createScene();
+// glow halus
+const glowLayer = new BABYLON.GlowLayer("glow", scene);
+glowLayer.intensity = 0.7;
+
+// highlight border
+const hl = new BABYLON.HighlightLayer("hl1", scene);
 
 // Render loop
 engine.runRenderLoop(() => scene.render());
