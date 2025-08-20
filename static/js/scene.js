@@ -50,7 +50,7 @@ function createSkybox(scene, skyboxType) {
 function fix_scene(scene) {
     const ground = BABYLON.MeshBuilder.CreateGround('ground', { width: 100, height: 100, subdivisions: 2 }, scene);
     ground.material = new BABYLON.StandardMaterial('groundMat', scene);
-    ground.material.diffuseTexture = new BABYLON.Texture('/static/assets/pattern/rumput.jpg', scene);
+    ground.material.diffuseTexture = new BABYLON.Texture('/static/assets/pattern/tanah1.jpg', scene);
     ground.material.diffuseTexture.uScale = 10;
     ground.material.diffuseTexture.vScale = 10;
     ground.receiveShadows = true;
@@ -81,14 +81,14 @@ function initScene() {
 }
 
 function initCamera(scene) {
-    camera = new BABYLON.ArcRotateCamera(
-        "camera",
-        -Math.PI / 2,
-        Math.PI / 2.5,
-        50,
-        BABYLON.Vector3.Zero(),
-        scene
-    );
+ const camera = new BABYLON.ArcRotateCamera(
+    "camera",
+    Math.PI / 2,
+    Math.PI / 4,
+    10,
+    new BABYLON.Vector3(0, 0, 0),
+    scene
+);
     camera.attachControl(canvas, true);
     return camera;
 }
@@ -141,17 +141,20 @@ async function addSensorIcons(scene) {
             let mesh;
 
             if (sensor.type === "wall") {
-                mesh = BABYLON.MeshBuilder.CreateBox(sensor.id, { width: 3, height: 3, depth: 2 }, scene);
+                mesh = BABYLON.MeshBuilder.CreateBox(sensor.id, { width: sensor.dimensions.width, height: sensor.dimensions.height, depth: sensor.dimensions.depth }, scene);
                 const mat = new BABYLON.StandardMaterial(`${sensor.id}_mat`, scene);
                 mat.diffuseColor = new BABYLON.Color3(1, 0, 0); // merah
                 mat.alpha = 0.5;
                 mesh.material = mat;
 
             } else if (sensor.type === "cctv") {
-                mesh = BABYLON.MeshBuilder.CreateSphere(sensor.id, { diameter: 0.5 }, scene);
+                mesh = BABYLON.MeshBuilder.CreatePlane(sensor.id, { width: 2, height: 2 }, scene);
                 const mat = new BABYLON.StandardMaterial(`${sensor.id}_mat`, scene);
-                mat.diffuseColor = new BABYLON.Color3(1, 0.5, 0); // orange
-                mat.alpha = 0.5;
+               // buat material dengan texture gambar
+                mat.diffuseTexture = new BABYLON.Texture("static/assets/pattern/webcam.png", scene);
+                mat.diffuseTexture.hasAlpha = true; // aktifkan transparansi dari gambar
+                mat.backFaceCulling = false;        // biar gambar terlihat dari dua sisi
+                mat.boundingBox = true; // aktifkan bounding box
                 mesh.material = mat;
 
             } else if (sensor.type === "zone") {
@@ -235,10 +238,18 @@ function registerPointerEvents(scene, camera) {
                     mat.diffuseColor = new BABYLON.Color3(1, 0, 0); // merah
                     mat.alpha = 0.5;
                 } else if (panelType === 'cctv') {
-                    newObject = BABYLON.MeshBuilder.CreateSphere(panelName, { diameter: 0.5 }, scene);
+                        // buat plane
+                    newObject = BABYLON.MeshBuilder.CreatePlane(panelName, { width: 2, height: 2 }, scene);
+
+                    // buat material dengan texture gambar
                     mat = new BABYLON.StandardMaterial("mat_cctv", scene);
-                    mat.diffuseColor = new BABYLON.Color3(1, 0.5, 0); // orange
-                    mat.alpha = 0.5;
+                    mat.diffuseTexture = new BABYLON.Texture("static/assets/pattern/webcam.png", scene);
+                    mat.diffuseTexture.hasAlpha = true; // aktifkan transparansi dari gambar
+                    mat.backFaceCulling = false;        // biar gambar terlihat dari dua sisi
+                    mat.emissiveTexture = mat.diffuseTexture; // biar terang tanpa pengaruh cahaya
+
+                    // optional: rotasi supaya tegak (facing camera)
+                    newObject.rotation.y = Math.PI; // atau sesuaikan sesuai scene
                 } else if (panelType === 'zone') {
                     newObject = BABYLON.MeshBuilder.CreatePlane(panelName, { width: 4, height: 4 }, scene);
                     mat = new BABYLON.StandardMaterial("mat_zone", scene);
@@ -316,7 +327,7 @@ document.getElementById("saveSceneBtn").addEventListener("click", () => {
 
     scene.meshes.forEach(mesh => {
         if (mesh.type === "wall" || mesh.type === "cctv" || mesh.type === "zone") {
-            sensorsData.push({
+            const sensorObj = {
                 id: mesh.id,
                 type: mesh.type,
                 position: {
@@ -329,10 +340,24 @@ document.getElementById("saveSceneBtn").addEventListener("click", () => {
                     y: mesh.scaling.y,
                     z: mesh.scaling.z
                 }
-            });
+            };
+
+            // khusus wall → ambil width, height, depth
+            if (mesh.type === "wall") {
+                const bbox = mesh.getBoundingInfo().boundingBox;
+                sensorObj.dimensions = {
+                    width: bbox.maximumWorld.x - bbox.minimumWorld.x,
+                    height: bbox.maximumWorld.y - bbox.minimumWorld.y,
+                    depth: bbox.maximumWorld.z - bbox.minimumWorld.z
+                };
+            }
+
+            sensorsData.push(sensorObj);
         }
     });
-    console.log("Saving sensors:", pendingSensors); // debug log
+
+    console.log("Saving sensors:", sensorsData);
+
 
     fetch("/save_sensors", {
         method: "POST",

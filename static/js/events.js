@@ -72,14 +72,28 @@ document.getElementById('perspectiveViewBtn').addEventListener('click', () => {
 // Tombol Panning mode
 document.getElementById('panViewBtn').addEventListener('click', () => {
     isPanningModeActive = !isPanningModeActive; // toggle status
+
+    const canvas = scene.getEngine().getRenderingCanvas();
+
     if (isPanningModeActive) {
         camera.panningSensibility = 2000;
+        canvas.style.cursor = "grab"; // kursor tangan
         statusBar('Panning mode: On');
+
+        // Saat mouse ditekan → kursor "grabbing"
+        canvas.addEventListener("mousedown", () => {
+            if (isPanningModeActive) canvas.style.cursor = "grabbing";
+        });
+        canvas.addEventListener("mouseup", () => {
+            if (isPanningModeActive) canvas.style.cursor = "grab";
+        });
     } else {
         camera.panningSensibility = 0;
+        canvas.style.cursor = "default"; // balik normal
         statusBar('Panning mode: Off');
     }
 });
+
 // hapus event sensor 
 let selectedMesh = null;
 

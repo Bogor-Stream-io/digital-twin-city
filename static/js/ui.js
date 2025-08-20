@@ -20,9 +20,27 @@ function showInfo(object) {
 
 function focusLocation(id) {
     const mesh = scene.getMeshByName(id);
-    if (mesh) {
+    if (mesh && camera instanceof BABYLON.ArcRotateCamera) {
+        // Hitung sudut (alpha) tujuan dari posisi kamera ke mesh
+        const direction = mesh.position.subtract(camera.target);
+        const targetAlpha = Math.atan2(direction.x, direction.z);
+
+        // Animasi alpha (putaran horizontal kamera)
         BABYLON.Animation.CreateAndStartAnimation(
-            'cameraFocusAnimation',
+            'cameraAlphaAnimation',
+            camera,
+            'alpha',
+            30, // fps
+            60, // durasi frame
+            camera.alpha,
+            targetAlpha,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
+            new BABYLON.SineEase()
+        );
+
+        // Animasi target kamera supaya fokus ke mesh
+        BABYLON.Animation.CreateAndStartAnimation(
+            'cameraTargetAnimation',
             camera,
             'target',
             30,

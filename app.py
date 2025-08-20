@@ -113,5 +113,5 @@ def update_sensor():
     return jsonify({"message": f"Sensor {new_sensor['id']} berhasil disimpan"})
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)
 CORS(app) # Ini akan mengaktifkan CORS untuk semua rute
