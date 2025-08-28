@@ -2,22 +2,46 @@ function statusBar(msg) {
     document.getElementById('status').innerText = msg;
 }
 
+function createCCTVButton(url, label = "Open CCTV") {
+    const btn = document.createElement("button");
+    btn.textContent = label;
+    btn.className = "cctv-open-button"; // pakai style tombol CCTV
+    btn.addEventListener("click", () => {
+        openCCTVModal(url);
+    });
+    return btn;
+}
+
 function showInfo(object) {
     const infoPanel = document.getElementById('infoPanel');
     if (!infoPanel) return;
 
     const content = infoPanel.querySelector('#infoContent');
+    const data = object.metadata || object;
+
     let html = `<p><b>Name:</b> ${object.name || 'N/A'}</p>`;
-    html += `<p><b>Type Sensor:</b> ${object.type || 'N/A'}</p>`;
-    
-    
-    if (object.api) {
-        html += `<p><b>API:</b> ${object.api}</p>`;
+    html += `<p><b>Type Sensor:</b> ${data.type || 'N/A'}</p>`;
+    if (data.api) {
+        html += `<p><b>API:</b> ${data.api}</p>`;
     }
 
     content.innerHTML = html;
+
+    // Jika CCTV, tambahkan tombol buka video
+    const controls = document.createElement("div");
+    controls.style.marginTop = "8px";
+
+    if (data.type === "cctv") {
+        const url = data.api || ""; // gunakan api field sebagai URL stream/embed
+        const btn = createCCTVButton(url, "🎥 Open CCTV");
+        controls.appendChild(btn);
+    }
+
+    content.appendChild(controls);
     infoPanel.classList.add('active');
 }
+
+
 
 function focusLocation(id) {
     const mesh = scene.getMeshByName(id);
@@ -81,5 +105,4 @@ function focusLocation(id) {
 function resetPanellAddForm() {
     document.getElementById("panelName").value = "";
     document.getElementById("panelType").value = "wall";
-    document.getElementById("apiInput").value = "";
 }

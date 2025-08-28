@@ -135,7 +135,7 @@ function initGizmo(scene) {
 }
 
 function loadModel(scene, camera) {
-    const MODEL_URL = 'static/assets/city.glb';
+    const MODEL_URL = 'static/assets/newvilla.glb';
     statusBar('Loading model from local assets …');
     BABYLON.SceneLoader.Append('', MODEL_URL, scene, (scene) => {
         statusBar('Building model loaded');
@@ -165,14 +165,14 @@ function loadModel(scene, camera) {
 
 async function addSensorIcons(scene) {
     try {
-        const response = await fetch("static/data/sensor.json");
+        const response = await fetch("/api/sensors"); // 🔥 Panggil API Flask SQLite
         const sensorIcons = await response.json();
 
         sensorIcons.forEach(sensor => {
             let mesh;
 
             if (sensor.type === "wall") {
-                const dims = sensor.dimensions || { width: 1, height: 1, depth: 1 }; // fallback
+                const dims = sensor.dimensions || { width: 1, height: 1, depth: 1 };
                 mesh = BABYLON.MeshBuilder.CreateBox(sensor.id, {
                     width: dims.width,
                     height: dims.height,
@@ -202,30 +202,29 @@ async function addSensorIcons(scene) {
                 mat.backFaceCulling = false;
                 mesh.material = mat;
 
-                // default orientasi zone
                 mesh.sideOrientation = BABYLON.Mesh.DOUBLESIDE;
                 mesh.rotation.x = Math.PI / -2;
             }
 
             if (mesh) {
-                // posisi
+                // Posisi
                 if (sensor.position) {
                     mesh.position = new BABYLON.Vector3(sensor.position.x, sensor.position.y, sensor.position.z);
                 }
 
-                // rotasi
+                // Rotasi
                 if (sensor.rotation) {
                     mesh.rotation = new BABYLON.Vector3(sensor.rotation.x, sensor.rotation.y, sensor.rotation.z);
                 }
 
-                // scaling
+                // Scaling
                 if (sensor.scaling) {
                     mesh.scaling = new BABYLON.Vector3(sensor.scaling.x, sensor.scaling.y, sensor.scaling.z);
                 }
 
                 mesh.type = sensor.type;
                 mesh.api = sensor.api || '';
-                // Tambahkan action manager untuk hover effect
+
                 mesh.actionManager = new BABYLON.ActionManager(scene);
 
                 // Hover effect
@@ -262,7 +261,7 @@ async function addSensorIcons(scene) {
             }
         });
     } catch (err) {
-        console.error("Gagal load sensor.json:", err);
+        console.error("Gagal load sensors dari API:", err);
     }
 }
 

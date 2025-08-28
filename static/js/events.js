@@ -206,7 +206,7 @@ document.getElementById("saveBtn").addEventListener("click", async () => {
     };
 
         try {
-        const saveRes = await fetch("/save_edit", {
+        const saveRes = await fetch("/save_panel", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(sensorData)
