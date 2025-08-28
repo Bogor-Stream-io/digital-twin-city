@@ -1,4 +1,3 @@
-
 function updateControlStatus(mesh, mode = null) {
     const moveBtn = document.getElementById('moveBtn');
     const rotateBtn = document.getElementById('rotateBtn');
@@ -7,7 +6,7 @@ function updateControlStatus(mesh, mode = null) {
 
     if (mesh) {
         // Tampilkan nama object yang dipilih
-        selectedObjectName.innerText = `Selected Object: ${mesh.name}`;
+        selectedObjectName.innerText = `Selected: ${mesh.name}`;
 
         // Enable tombol kontrol
         moveBtn.disabled = false;
@@ -33,7 +32,7 @@ function updateControlStatus(mesh, mode = null) {
         }
     } else {
         // Kalau tidak ada mesh terpilih
-        selectedObjectName.innerText = 'No object selected | No mode active';
+        selectedObjectName.innerText = 'No object selected';
         moveBtn.disabled = true;
         rotateBtn.disabled = true;
         resizeBtn.disabled = true;

@@ -208,7 +208,7 @@
     transition: background-color 0.2s;
 }
 
-#placeBtn {
+#placeBtn, #saveBtn {
     background-color: #4CAF50;
     color: white;
 }

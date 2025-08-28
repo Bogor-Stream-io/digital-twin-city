@@ -3,19 +3,9 @@ document.getElementById('addPanelBtn').addEventListener('click', () => {
     document.getElementById('formPanel').style.display = 'flex';
     currentPanelPlacement = true;
     statusBar('Click on the scene to place the new object.');
+    // Reset form fields
+    resetPanellAddForm();
     camera.detachControl(canvas);
-});
-
-// Event listener untuk Cancel
-document.getElementById('cancelBtn').addEventListener('click', () => {
-    document.getElementById('formPanel').style.display = 'none';
-    currentPanelPlacement = false;
-    camera.attachControl(canvas, true);
-});
-
-// Event listener untuk Place
-document.getElementById('placeBtn').addEventListener('click', () => {
-    document.getElementById('formPanel').style.display = 'none';
 });
 
 // Tombol kontrol gizmo (Move, Rotate, Resize)
@@ -39,7 +29,6 @@ document.getElementById('resizeBtn').addEventListener('click', () => {
 
 // Tombol kontrol kamera
 document.getElementById('topViewBtn').addEventListener('click', () => {
-    
     camera.setTarget(BABYLON.Vector3.Zero());
     BABYLON.Animation.CreateAndStartAnimation('cameraMove', camera, 'alpha', 30, 60, camera.alpha, Math.PI / 2, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT, new BABYLON.SineEase());
     BABYLON.Animation.CreateAndStartAnimation('cameraMove', camera, 'beta', 30, 60, camera.beta, 0.01, BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT, new BABYLON.SineEase());
@@ -72,60 +61,55 @@ document.getElementById('perspectiveViewBtn').addEventListener('click', () => {
 // Tombol Panning mode
 document.getElementById('panViewBtn').addEventListener('click', () => {
     isPanningModeActive = !isPanningModeActive; // toggle status
-
-    const canvas = scene.getEngine().getRenderingCanvas();
-
     if (isPanningModeActive) {
         camera.panningSensibility = 2000;
-        canvas.style.cursor = "grab"; // kursor tangan
         statusBar('Panning mode: On');
-
-        // Saat mouse ditekan → kursor "grabbing"
-        canvas.addEventListener("mousedown", () => {
-            if (isPanningModeActive) canvas.style.cursor = "grabbing";
-        });
-        canvas.addEventListener("mouseup", () => {
-            if (isPanningModeActive) canvas.style.cursor = "grab";
-        });
     } else {
         camera.panningSensibility = 0;
-        canvas.style.cursor = "default"; // balik normal
         statusBar('Panning mode: Off');
     }
 });
-
 // hapus event sensor 
-let selectedMesh = null;
 
 document.getElementById("deleteSensorBtn").addEventListener("click", () => {
+    console.log("Delete sensor:", selectedMesh);
     deleteSensor(selectedMesh);
 });
 
 //event listener untuk tombol Edit Sensor
 // Tombol Edit Sensor
 document.getElementById("editSensorBtn").addEventListener("click", () => {
-    const formPanel = document.getElementById("formPanel");
+    const formPanel = document.getElementById("formEditPanel");
     formPanel.style.display = (formPanel.style.display === "block") ? "none" : "block";
 
     // Jika ada mesh yang dipilih, isi form dengan datanya
     if (selectedMesh) {
-        document.getElementById("panelType").value = selectedMesh.type || "wall";
-        document.getElementById("panelName").value = selectedMesh.id || "";
-        document.getElementById("apiInput").value = selectedMesh.api || "";
+        document.getElementById("EditpanelType").value = selectedMesh.type || "wall";
+        document.getElementById("EditpanelName").value = selectedMesh.id || "";
+        document.getElementById("EditapiInput").value = selectedMesh.api || "";
     }
 });
 
-// Cancel
-document.getElementById("cancelBtn").addEventListener("click", () => {
+// Cancel Add
+document.getElementById("cancelAddBtn").addEventListener("click", () => {
     document.getElementById("formPanel").style.display = "none";
     document.getElementById("placeBtn").textContent = "Place Object";
     editMode = false;
     selectedMesh = null;
 });
 
+// Cancel Edit
+document.getElementById("cancelEditBtn").addEventListener("click", () => {
+    document.getElementById("formEditPanel").style.display = "none";
+    editMode = false;
+    selectedMesh = null;
+});
+
+
 // Place / Update Object
 let editMode = false; // Flag untuk mode edit
 document.getElementById("placeBtn").addEventListener("click", async () => {
+    document.getElementById('formPanel').style.display = 'none';
     const type = document.getElementById("panelType").value;
     const name = document.getElementById("panelName").value;
     const api = document.getElementById("apiInput").value;
@@ -168,6 +152,93 @@ document.getElementById("placeBtn").addEventListener("click", async () => {
         // 👉 di sini lanjutkan logic Place Object sesuai kode awalmu
     }
 });
+
+// Save  Update Object Form panel
+document.getElementById("saveBtn").addEventListener("click", async () => {
+    const type = document.getElementById("EditpanelType").value.trim();
+    const name = document.getElementById("EditpanelName").value.trim();
+    const api = document.getElementById("EditapiInput").value.trim();
+
+    if (!name) {
+        alert("ID/Name sensor tidak boleh kosong");
+        return;
+    }
+
+    console.log("Saving sensor editBtn Panel :", { type, name, api });
+
+    // Default values
+    let pos = { x: 0, y: 0, z: 0 };
+    let scl = { x: 1, y: 1, z: 1 };
+    let dim = { width: 2, height: 2, depth: 2 };
+
+    if (selectedMesh && selectedMesh.position) {
+        pos = {
+            x: selectedMesh.position.x,
+            y: selectedMesh.position.y,
+            z: selectedMesh.position.z
+        };
+    }
+
+    if (selectedMesh && selectedMesh.scaling) {
+        scl = {
+            x: selectedMesh.scaling.x,
+            y: selectedMesh.scaling.y,
+            z: selectedMesh.scaling.z
+        };
+    } 
+        // dimensi (support mesh gabungan / hierarki)
+    if (selectedMesh && selectedMesh.getHierarchyBoundingVectors) {
+        const { min, max } = selectedMesh.getHierarchyBoundingVectors();
+        const dimensions = max.subtract(min);
+        dim = {
+            width: dimensions.x,
+            height: dimensions.y,
+            depth: dimensions.z
+        };
+    }
+    const sensorData = {
+        id: name,
+        type: type || "default",
+        position: pos,
+        scaling: scl,
+        dimension: dim,
+        api: api || ""
+    };
+
+        try {
+        const saveRes = await fetch("/save_edit", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(sensorData)
+        });
+
+        const text = await saveRes.text();
+        let result;
+        try {
+            result = JSON.parse(text);
+        } catch (e) {
+            throw new Error("Server tidak mengembalikan JSON: " + text);
+        }
+
+        if (!saveRes.ok) {
+            throw new Error(result.error || "Gagal menyimpan sensor");
+        }
+
+        alert(result.message || `Sensor ${sensorData.id} berhasil disimpan/diupdate`);
+
+        // Reset form
+        document.getElementById("saveBtn").textContent = "Save";
+        editMode = false;
+        selectedMesh = null; // kalau mau clear selection
+        document.getElementById("formEditPanel").style.display = "none";
+
+    } catch (err) {
+        console.error("Error saat menyimpan sensor:", err);
+        alert("Gagal menyimpan sensor: " + err.message);
+    }
+});
+
+
 // Kamu bisa sambungkan ini dengan event click BabylonJS
 function selectMesh(mesh) {
     selectedMesh = mesh;

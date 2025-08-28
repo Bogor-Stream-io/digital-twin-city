@@ -3,6 +3,11 @@ import json, os
 from flask_cors import CORS
 app = Flask(__name__)
 SENSOR_FILE = "static/data/sensor.json"
+
+@app.errorhandler(500)
+def internal_error(error):
+    return jsonify({"error": "Internal Server Error", "detail": str(error)}), 500
+
 @app.route("/")
 def index():
     return render_template("home.html")
@@ -78,39 +83,35 @@ def save_sensors():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-# route edit data sensor
-@app.route("/update-sensor", methods=["POST"])
-def update_sensor():
-    new_sensor = request.json
-    if not new_sensor.get("id"):
-        return jsonify({"error": "ID required"}), 400
+#route untuk update atau simpan sensor edit
+@app.route("/save_edit", methods=["POST"])
+def save_edit():
+    """
+    Terima array data sensor dari frontend, hapus data lama,
+    lalu overwrite file sensor.json dengan data baru.
+    """
+    try:
+        data = request.get_json(force=True)
 
-    # Load data lama
-    if os.path.exists(SENSOR_FILE):
-        with open(SENSOR_FILE, "r") as f:
-            try:
-                sensors = json.load(f)
-            except:
-                sensors = []
-    else:
-        sensors = []
+        # Validasi: harus list
+        if not isinstance(data, list):
+            return jsonify({"error": "Data harus berupa list sensor"}), 400
 
-    # Cari dan update sensor dengan ID yg sama
-    updated = False
-    for i, sensor in enumerate(sensors):
-        if sensor["id"] == new_sensor["id"]:
-            sensors[i] = new_sensor
-            updated = True
-            break
+        # Optional: validasi setiap sensor ada ID
+        for sensor in data:
+            if "id" not in sensor:
+                return jsonify({"error": f"Sensor tanpa ID ditemukan: {sensor}"}), 400
 
-    if not updated:
-        sensors.append(new_sensor)
+        # Simpan langsung ke file (overwrite semua)
+        os.makedirs(os.path.dirname(SENSOR_FILE), exist_ok=True)
+        with open(SENSOR_FILE, "w") as f:
+            json.dump(data, f, indent=4)
 
-    # Simpan ke file
-    with open(SENSOR_FILE, "w") as f:
-        json.dump(sensors, f, indent=4)
+        return jsonify({"message": "Semua sensor berhasil disimpan"}), 200
 
-    return jsonify({"message": f"Sensor {new_sensor['id']} berhasil disimpan"})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0', port=5000, debug=True)
