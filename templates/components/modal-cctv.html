@@ -1,0 +1,20 @@
+<!-- CCTV Modal -->
+<div id="cctvModal" class="cctv-modal" aria-hidden="true">
+  <div class="cctv-backdrop" id="cctvBackdrop"></div>
+
+  <div class="cctv-container" id="cctvContainer" role="dialog" aria-modal="true">
+    <header class="cctv-header">
+      <span id="cctvTitle">CCTV View</span>
+      <div class="cctv-actions">
+        <button id="cctvFullscreenBtn" title="Toggle Fullscreen">⤢</button>
+        <button id="cctvCloseBtn" title="Close">✕</button>
+      </div>
+    </header>
+
+    <div class="cctv-body">
+      <div class="cctv-iframe-wrap" id="cctvIframeWrap">
+        <iframe id="cctvIframe" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Digital Twin</title>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    body, html { margin: 0; padding: 0; overflow: hidden; height: 100%; }
+    #renderCanvas { width: 100%; height: 100%; display: block; }
+
+    /* Sidebar */
+    #sidebar {
+      width: 280px;
+      background: #fff;
+      color: #333;
+      font-size: 14px;
+      overflow-y: auto;
+      box-shadow: 2px 0 5px rgba(0,0,0,0.15);
+    }
+    #sidebar h2 {
+      padding: 16px;
+      font-weight: bold;
+      border-bottom: 1px solid #e0e0e0;
+    }
+    .menu-section {
+      border-bottom: 1px solid #eee;
+    }
+    .menu-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .menu-title:hover { background: #f5f5f5; }
+    .submenu { padding-left: 20px; }
+    .submenu button {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 8px 12px;
+      border-radius: 4px;
+    }
+    .submenu button:hover { background: #f0f0f0; }
+
+    /* Panel Info */
+    #infoPanel {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 320px;
+      background: #fff;
+      color: #000;
+      border-radius: 4px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      padding: 16px;
+      display: none;
+    }
+    #infoPanel.active { display: block; }
+    #infoPanel h2 {
+      font-size: 18px;
+      font-weight: bold;
+      margin-bottom: 8px;
+    }
+    #infoPanel p { margin-bottom: 4px; font-size: 14px; }
+    #closePanel {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    /* Warna kategori sesuai gambar */
+    .cat-orange { border-left: 6px solid #f39c12; }
+    .cat-blue { border-left: 6px solid #3498db; }
+    .cat-green { border-left: 6px solid #2ecc71; }
+    .cat-pink { border-left: 6px solid #e91e63; }
+    .cat-red { border-left: 6px solid #e74c3c; }
+  </style>
+</head>
+<body>
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar">
+      <h2>Welcome</h2>
+
+      <div class="menu-section cat-orange">
+        <div class="menu-title">University facilities</div>
+        <div class="submenu">
+          <button onclick="focusLocation('house1')">House 1</button>
+          <button onclick="focusLocation('house2')">House 2</button>
+          <button onclick="focusLocation('house3')">House 3</button>
+          <button onclick="focusLocation('house4')">House 4</button>
+        </div>
+      </div>
+
+      <div class="menu-section cat-blue">
+        <div class="menu-title">Student Housing</div>
+      </div>
+
+      <div class="menu-section cat-green">
+        <div class="menu-title">Sustainability</div>
+      </div>
+
+      <div class="menu-section cat-pink">
+        <div class="menu-title">Webcams</div>
+      </div>
+
+      <div class="menu-section cat-blue">
+        <div class="menu-title">Pictures</div>
+      </div>
+
+      <div class="menu-section cat-red">
+        <div class="menu-title">Places</div>
+      </div>
+
+      <div class="menu-section cat-orange">
+        <div class="menu-title">Read more</div>
+      </div>
+    </div>
+
+    <!-- 3D Viewer -->
+    <div class="flex-1 relative">
+      <canvas id="renderCanvas"></canvas>
+      <div id="status" class="absolute top-2 left-2 bg-black bg-opacity-70 text-white px-3 py-1 rounded text-sm"></div>
+    </div>
+
+    <!-- Info Panel -->
+    <div id="infoPanel">
+      <span id="closePanel">✕</span>
+      <h2>House 1</h2>
+      <p><b>Developer:</b> Akademiska Hus</p>
+      <p><b>Tenant:</b> Stockholm University</p>
+      <p><b>Architect:</b> BSK Arkitekter</p>
+      <p><b>Gross area:</b> approx. 18 000 m²</p>
+      <p><b>Miljöbyggnad:</b> Silver</p>
+      <p><b>Move-in:</b> Spring 2022</p>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('renderCanvas');
+    const engine = new BABYLON.Engine(canvas, true);
+    let scene, camera;
+
+    function statusBar(msg) {
+      document.getElementById('status').innerText = msg;
+    }
+
+    const createScene = () => {
+      scene = new BABYLON.Scene(engine);
+      camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 50, BABYLON.Vector3.Zero(), scene);
+      camera.attachControl(canvas, true);
+      new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+      return scene;
+    };
+
+    function focusLocation(id) {
+      document.getElementById("infoPanel").classList.add("active");
+    }
+
+    document.getElementById("closePanel").onclick = () => {
+      document.getElementById("infoPanel").classList.remove("active");
+    };
+
+    scene = createScene();
+    engine.runRenderLoop(() => scene.render());
+    window.addEventListener('resize', () => engine.resize());
+  </script>
+</body>
+</html>

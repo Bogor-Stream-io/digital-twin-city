@@ -1,0 +1,295 @@
+ body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100%;
+    
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #333;
+}
+
+#renderCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* Sidebar Styling */
+#sidebar {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 300px;
+    height: auto;
+    font-size: smaller;
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    padding: 15px;
+    box-sizing: border-box;
+    transition: transform 0.3s ease-in-out;
+}
+
+#sidebar.hidden {
+    transform: translateX(-120%);
+}
+
+/* InfoPanel Styling */
+#infoPanel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 350px;
+    height: auto;
+    
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    padding: 20px;
+    box-sizing: border-box;
+    transition: transform 0.5s ease-in-out;
+    transform: translateX(120%);
+}
+
+#infoPanel.active {
+    transform: translateX(0);
+}
+
+/* Style for panel headers/titles if they exist */
+.panel-header {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+}
+
+/* CONTROL PANEL BOTTOM */
+/* Container Utama untuk Bilah Bawah (Bottom Bar) */
+.bottom-bar {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 30px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.75);
+    color: #f0f0f0;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 0 10px;
+    z-index: 1000;
+}
+
+/* Gaya untuk setiap bagian di dalam bilah */
+.bar-section {
+    display: flex;
+    align-items: center;
+    height: 100%;
+}
+
+/* Gaya untuk status teks */
+#status {
+    font-size: 0.7rem;
+    padding-right: 10px;
+    border-right: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Gaya untuk teks informasi objek terpilih */
+#selected-info {
+    font-size: 0.7rem;
+    font-weight: 600;
+    padding-left: 10px;
+    margin-right: auto; /* Menggeser ke kiri */
+}
+
+/* Gaya untuk group tombol objek dan kamera */
+.button-group,
+.camera-control-group {
+    gap: 5px;
+    margin-left: 15px; /* Memberi jarak dari teks info */
+}
+
+/* Gaya dasar tombol ikon */
+.button-group button,
+.camera-control-group button {
+    background-color: #555;
+    color: white;
+    padding: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    line-height: 1;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background-color 0.2s;
+}
+
+/* Efek hover untuk tombol ikon */
+.button-group button:hover:not(:disabled),
+.camera-control-group button:hover {
+    background-color: #4CAF50;
+}
+
+/* Gaya untuk tombol yang non-aktif (disabled) */
+.button-group button:disabled {
+    background-color: #333;
+    color: #888;
+    cursor: not-allowed;
+}
+
+/* Sembunyikan panel kontrol lama */
+.controls-panel {
+    display: none;
+}
+
+/* PANEL KONTROL ADD PANELS */
+/* Gaya untuk form panel */
+.form-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Menempatkan tepat di tengah */
+    background: rgba(0, 0, 0, 0.85);
+    color: #f0f0f0;
+    padding: 30px;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+    z-index: 2000;
+    display: none; /* Sembunyikan secara default */
+    flex-direction: column;
+    gap: 15px;
+    width: 300px;
+}
+
+.form-panel h3 {
+    margin: 0 0 10px;
+    font-size: 1.5rem;
+    text-align: center;
+    color: #4CAF50;
+}
+
+.form-panel label {
+    font-size: 0.9rem;
+    margin-bottom: 5px;
+}
+
+.form-panel input,
+.form-panel select {
+    width: 100%;
+    padding: 8px;
+    border: none;
+    border-radius: 4px;
+    background-color: #333;
+    color: #f0f0f0;
+}
+
+.form-buttons {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 20px;
+}
+
+.form-buttons button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#placeBtn, #saveBtn {
+    background-color: #4CAF50;
+    color: white;
+}
+
+#cancelBtn {
+    background-color: #dc3545;
+    color: white;
+}
+
+/* Modal basic */
+.cctv-modal { position: fixed; inset: 0; display: none; z-index: 2000; }
+.cctv-modal[aria-hidden="false"] { display: block; }
+
+/* Backdrop */
+.cctv-backdrop {
+  position: absolute; inset: 0;
+  background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(3px);
+}
+
+/* Container centered at 50% screen */
+.cctv-container {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(1100px, 90vw);
+  height: min(640px, 70vh);
+  background: #0d0d0d;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.cctv-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  color: #fff;
+  background: rgba(255,255,255,0.03);
+  font-weight: 600;
+}
+.cctv-actions button {
+  background: transparent;
+  color: #fff;
+  border: none;
+  padding: 6px 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+.cctv-actions button:hover { opacity: 0.9; }
+
+/* Body */
+.cctv-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 8px; }
+.cctv-iframe-wrap {
+  width: 100%;
+  height: 100%;
+  background: #000;
+  display: flex;
+}
+#cctvIframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+/* Fullscreen style (optional for visual) */
+.cctv-fullscreen {
+  width: 100vw !important;
+  height: 100vh !important;
+  left: 50% !important;
+  top: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  border-radius: 0 !important;
+}
+.cctv-open-btn {
+     @apply px-4 py-2 rounded-xl font-semibold text-white shadow-lg 
+           bg-gradient-to-r from-red-500 to-pink-500 
+           hover:scale-105 hover:shadow-xl transform transition-all duration-300;
+}

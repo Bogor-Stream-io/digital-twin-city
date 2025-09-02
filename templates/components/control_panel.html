@@ -1,0 +1,53 @@
+<div class="bottom-bar">
+    <div id="status" class="bar-section">Loading...</div>
+    
+    <div id="selected-info" class="bar-section">
+        <span id="selectedObjectName">No object selected</span>
+    </div>
+    <div class="button-scene bar-section">
+        <button id="saveSceneBtn">💾 Save Scene &nbsp; </button>
+          <button id="deleteSensorBtn">🗑️ Hapus &nbsp; &nbsp; | &nbsp; &nbsp;</button>
+    </div>
+    <div class="button-group-add-from">
+        <div class="add-panel-section bar-section">
+        <button id="addPanelBtn"> <i class="fas fa-plus-square"></i> Add Sensor &nbsp; &nbsp; | &nbsp; </button>
+        <button id="editSensorBtn"> <i class="fa-solid fa-pen"></i> &nbsp;Edit Sensor</button>
+        
+    </div>
+    </div>
+
+    <div class="button-group bar-section">
+         Edit <span id="selectBtn" class="active"><i class="fas fa-expand-arrows-alt"></i></span>
+        <button id="moveBtn"><i class="fas fa-arrows-alt"></i></button>
+        <button id="rotateBtn" ><i class="fas fa-sync-alt"></i></button>
+        <button id="resizeBtn" ><i class="fas fa-expand-arrows-alt"></i>&nbsp; </button>
+    </div>
+
+    <div class="camera-control-group bar-section">|&nbsp; 
+        View <span id="selectBtn" class="active"><i class="fas fa-video-camera"></i></span>
+        <button id="panViewBtn"><i class="fas fa-hand-paper"></i></button>
+        <button id="topViewBtn"><i class="fas fa-arrow-up"></i></button>
+        <button id="bottomViewBtn"><i class="fas fa-arrow-down"></i></button>
+        <button id="leftViewBtn"><i class="fas fa-arrow-left"></i></button>
+        <button id="rightViewBtn"><i class="fas fa-arrow-right"></i></button>
+        <button id="perspectiveViewBtn"><i class="fas fa-cube"></i></button>
+    </div>
+</div>
+
+<div id="formPanel" class="form-panel">
+    <h3>Add New Panel</h3>
+    <label for="panelType">Panel Type:</label>
+    <select id="panelType">
+        <option value="wall">Building Part</option>
+        <option value="cctv">Sensor</option>
+        <option value="zone">Zone</option>
+    </select>
+    <label for="panelName">Panel Name:</label>
+    <input type="text" id="panelName">
+    
+    <input type="hidden" id="apiInput">
+    <div class="form-buttons">
+        <button id="placeBtn">Place Object</button>
+        <button id="cancelAddBtn">Cancel</button>
+    </div>
+</div>

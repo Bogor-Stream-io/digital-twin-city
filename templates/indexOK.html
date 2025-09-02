@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Campus Digital Twin</title>
+  <script src="https://cdn.babylonjs.com/babylon.js"></script>
+  <script src="https://cdn.babylonjs.com/loaders/babylonjs.loaders.min.js"></script>
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+   body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    color: #333;
+}
+
+#renderCanvas {
+    width: 100%;
+    height: 100%;
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 1;
+}
+
+/* Sidebar Styling */
+#sidebar {
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    width: 300px;
+    height: auto;
+   
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    padding: 15px;
+    box-sizing: border-box;
+    transition: transform 0.3s ease-in-out;
+}
+
+#sidebar.hidden {
+    transform: translateX(-120%);
+}
+
+/* InfoPanel Styling */
+#infoPanel {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 350px;
+    height: auto;
+    
+    border-radius: 8px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    z-index: 10;
+    padding: 20px;
+    box-sizing: border-box;
+    transition: transform 0.5s ease-in-out;
+    transform: translateX(120%);
+}
+
+#infoPanel.active {
+    transform: translateX(0);
+}
+
+/* Style for panel headers/titles if they exist */
+.panel-header {
+    font-size: 1.2em;
+    font-weight: bold;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+}
+  </style>
+</head>
+<body class="bg-gray-900 text-white">
+  <div class="flex h-screen">
+    <!-- Sidebar -->
+    <div id="sidebar" class="bg-gray-800 w-64 p-4 overflow-y-auto">
+      <h2 class="text-xl font-bold mb-4">Campus Map</h2>
+      <ul>
+        <li><button onclick="focusLocation('gate')" class="w-full text-left py-2 px-3 rounded hover:bg-gray-700">Main Gate</button></li>
+        <li><button onclick="focusLocation('building')" class="w-full text-left py-2 px-3 rounded hover:bg-gray-700">Main Building</button></li>
+        <li><button onclick="focusLocation('lab')" class="w-full text-left py-2 px-3 rounded hover:bg-gray-700">Lab Area</button></li>
+      </ul>
+    </div>
+
+    <!-- 3D Viewer -->
+    <div class="flex-1 relative">
+      <canvas id="renderCanvas"></canvas>
+      <div id="status" class="absolute top-2 left-2 bg-gray-700 bg-opacity-70 px-3 py-1 rounded text-sm"></div>
+    </div>
+
+    <!-- Info Panel -->
+    <div id="infoPanel" class="fixed top-0 right-0 w-96 h-full bg-gray-800 shadow-lg p-4 overflow-y-auto">
+      <h2 class="text-xl font-bold mb-4">Sensor Information</h2>
+      <div id="infoContent">Klik ikon sensor di map untuk melihat informasi.</div>
+    </div>
+  </div>
+
+  <script>
+    const canvas = document.getElementById('renderCanvas');
+    const engine = new BABYLON.Engine(canvas, true);
+    let scene, camera;
+
+    function statusBar(msg) {
+      document.getElementById('status').innerText = msg;
+    }
+
+    const createScene = () => {
+      scene = new BABYLON.Scene(engine);
+      camera = new BABYLON.ArcRotateCamera("camera", -Math.PI / 2, Math.PI / 2.5, 50, BABYLON.Vector3.Zero(), scene);
+      camera.attachControl(canvas, true);
+
+      new BABYLON.HemisphericLight("light", new BABYLON.Vector3(1, 1, 0), scene);
+
+      // Load local model
+      const MODEL_URL = 'static/assets/city.glb';
+      statusBar('Loading model from local assets …');
+      BABYLON.SceneLoader.Append('', MODEL_URL, scene, (scene) => {
+        statusBar('Building model loaded');
+
+        // Autofit camera
+        const meshes = scene.meshes;
+        if (meshes.length > 0) {
+          const boundingInfo = meshes[0].getHierarchyBoundingVectors(true);
+          const min = boundingInfo.min;
+          const max = boundingInfo.max;
+          const center = min.add(max).scale(0.5);
+          camera.setTarget(center);
+          const sizeVec = max.subtract(min);
+          const maxSize = Math.max(sizeVec.x, sizeVec.y, sizeVec.z);
+          camera.radius = maxSize * 1.5;
+        }
+      }, (evt) => {
+        if (evt.lengthComputable) {
+          const percent = (evt.loaded / evt.total * 100) | 0; statusBar(`Loading model… ${percent}%`)
+        }
+      }, (scene, message, exception) => {
+        console.error('Model load error for', MODEL_URL, message || exception);
+        statusBar('Model load error, check file path.');
+      });
+
+      // Example interactive sensors
+      const sensorIcons = [
+        { id: 'gate', position: new BABYLON.Vector3(0, 0, 0), type: 'gate' },
+        { id: 'building', position: new BABYLON.Vector3(10, 0, 0), type: 'cctv' },
+        { id: 'lab', position: new BABYLON.Vector3(-10, 0, 0), type: 'webcam' }
+      ];
+
+      sensorIcons.forEach(sensor => {
+        const sphere = BABYLON.MeshBuilder.CreateSphere(sensor.id, { diameter: 1 }, scene);
+        sphere.position = sensor.position;
+        sphere.actionManager = new BABYLON.ActionManager(scene);
+        sphere.actionManager.registerAction(new BABYLON.ExecuteCodeAction(BABYLON.ActionManager.OnPickTrigger, () => {
+          showInfo(sensor);
+        }));
+      });
+
+      return scene;
+    };
+
+    function showInfo(sensor) {
+      const panel = document.getElementById('infoPanel');
+      const content = document.getElementById('infoContent');
+      let html = `<p><b>Sensor ID:</b> ${sensor.id}</p><p><b>Type:</b> ${sensor.type}</p>`;
+      if (sensor.type === 'cctv' || sensor.type === 'webcam') {
+        html += `<img src="static/assets/cctv.png" alt="${sensor.type}" class="mt-2 rounded">`;
+      }
+      content.innerHTML = html;
+      panel.classList.add('active');
+    }
+
+    function focusLocation(id) {
+    const mesh = scene.getMeshByName(id);
+
+    if (mesh) {
+        // Create an animation to smoothly move the camera's target
+        BABYLON.Animation.CreateAndStartAnimation(
+            'cameraFocusAnimation',
+            camera,
+            'target',
+            30, // frames per second
+            60, // total frames, so 2 seconds animation
+            camera.target,
+            mesh.position,
+            BABYLON.Animation.ANIMATIONLOOPMODE_CONSTANT,
+            new BABYLON.SineEase() // Use an easing function for a smoother feel
+        );
+    }
+}
+
+    scene = createScene();
+    engine.runRenderLoop(() => scene.render());
+    window.addEventListener('resize', () => engine.resize());
+  </script>
+</body>
+</html>
